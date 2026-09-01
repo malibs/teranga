@@ -1,4 +1,8 @@
-import { Clock, Mail, MapPin, Phone } from "lucide-react"
+"use client"
+
+import { CheckCircle2, Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react"
+import { useState } from "react"
+
 import { Button } from "@/components/ui/button"
 
 const infos = [
@@ -8,7 +12,67 @@ const infos = [
   { icon: Clock, label: "Horaires", value: "Lun–Dim · 8h – 24h" },
 ]
 
+const defaultForm = {
+  name: "",
+  phone: "",
+  subject: "Louer un véhicule",
+  message: "",
+}
+
 export function ContactSection() {
+  const [form, setForm] = useState(defaultForm)
+  const [status, setStatus] = useState<{ type: "idle" | "success" | "error"; message: string }>({
+    type: "idle",
+    message: "",
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const whatsappLink = `https://wa.me/221772457032?text=${encodeURIComponent(
+    `Bonjour Teranga Automobile, je souhaite ${form.subject}.\nNom: ${form.name || ""}\nTéléphone: ${form.phone || ""}\nMessage: ${form.message || ""}`,
+  )}`
+
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = event.target
+    setForm((current) => ({ ...current, [name]: value }))
+    if (status.type !== "idle") {
+      setStatus({ type: "idle", message: "" })
+    }
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsSubmitting(true)
+    setStatus({ type: "idle", message: "" })
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      })
+
+      const payload = (await response.json()) as { success?: boolean; message?: string }
+
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || "Une erreur est survenue.")
+      }
+
+      setStatus({ type: "success", message: payload.message || "Votre demande a bien été enregistrée." })
+      setForm(defaultForm)
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Une erreur est survenue.",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <section id="contact" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
       <div className="grid gap-10 rounded-2xl border border-border bg-card p-6 sm:p-10 lg:grid-cols-2">
@@ -39,9 +103,28 @@ export function ContactSection() {
               </div>
             ))}
           </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1fb75a]"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </a>
+            <a
+              href="mailto:malibs007@gmail.com"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </a>
+          </div>
         </div>
 
-        <form className="flex flex-col gap-4 rounded-xl border border-border bg-background p-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border border-border bg-background p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="name" className="text-sm font-medium">
@@ -49,9 +132,13 @@ export function ContactSection() {
               </label>
               <input
                 id="name"
+                name="name"
                 type="text"
                 placeholder="Votre nom"
+                value={form.name}
+                onChange={handleChange}
                 className="h-11 rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -60,9 +147,13 @@ export function ContactSection() {
               </label>
               <input
                 id="phone"
+                name="phone"
                 type="tel"
                 placeholder="+221 ..."
+                value={form.phone}
+                onChange={handleChange}
                 className="h-11 rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                required
               />
             </div>
           </div>
@@ -73,6 +164,9 @@ export function ContactSection() {
             </label>
             <select
               id="subject"
+              name="subject"
+              value={form.subject}
+              onChange={handleChange}
               className="h-11 rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <option>Louer un véhicule</option>
@@ -88,14 +182,31 @@ export function ContactSection() {
             </label>
             <textarea
               id="message"
+              name="message"
               rows={4}
               placeholder="Dites-nous en plus sur votre besoin..."
+              value={form.message}
+              onChange={handleChange}
               className="rounded-md border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              required
             />
           </div>
 
-          <Button type="submit" size="lg" className="mt-2">
-            Envoyer ma demande
+          {status.message ? (
+            <div
+              className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
+                status.type === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-red-200 bg-red-50 text-red-700"
+              }`}
+            >
+              {status.type === "success" ? <CheckCircle2 className="mt-0.5 h-4 w-4" /> : null}
+              <span>{status.message}</span>
+            </div>
+          ) : null}
+
+          <Button type="submit" size="lg" className="mt-2" disabled={isSubmitting}>
+            {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande"}
           </Button>
         </form>
       </div>
