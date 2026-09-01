@@ -5,7 +5,7 @@ const infos = [
   { icon: Phone, label: "Téléphone", value: "+221 77 245 70 32" },
   { icon: Mail, label: "Email", value: "malibs007@gmail.com" },
   { icon: MapPin, label: "Adresse", value: "Cambéréne, Dakar, Sénégal" },
-  { icon: Clock, label: "Horaires", value: "Lun–Sam · 8h – 20h" },
+  { icon: Clock, label: "Horaires", value: "Lun–Dim · 8h – 24h" },
 ]
 
 export function ContactSection() {
