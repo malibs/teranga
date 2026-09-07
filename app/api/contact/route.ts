@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from "fs/promises"
+import { get, put } from "@vercel/blob"
 import path from "path"
 
 const REQUESTS_FILE = path.join(process.cwd(), "data", "contact-requests.json")
+const REQUESTS_BLOB = "teranga/contact-requests.json"
 
 type ContactRequest = {
   name: string
@@ -23,6 +25,21 @@ async function ensureRequestsFile() {
 }
 
 async function readRequests(): Promise<ContactRequest[]> {
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await get(REQUESTS_BLOB, { access: "private", useCache: false })
+
+    if (!blob) {
+      return []
+    }
+
+    const content = await new Response(blob.stream).text()
+    return JSON.parse(content || "[]") as ContactRequest[]
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Le stockage Vercel Blob n'est pas configuré. Ajoutez BLOB_READ_WRITE_TOKEN dans Vercel.")
+  }
+
   await ensureRequestsFile()
   const content = await readFile(REQUESTS_FILE, "utf-8")
   return JSON.parse(content || "[]") as ContactRequest[]
@@ -52,6 +69,21 @@ function normalizeBody(raw: unknown): ContactRequest {
 
 async function saveRequest(request: ContactRequest) {
   const requests = await readRequests()
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    await put(REQUESTS_BLOB, JSON.stringify([request, ...requests], null, 2), {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+    })
+    return
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Le stockage Vercel Blob n'est pas configuré. Ajoutez BLOB_READ_WRITE_TOKEN dans Vercel.")
+  }
+
   requests.unshift(request)
   await writeFile(REQUESTS_FILE, JSON.stringify(requests, null, 2), "utf-8")
 }
