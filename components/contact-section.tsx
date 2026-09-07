@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 
 const infos = [
   { icon: Phone, label: "Téléphone", value: "+221 77 245 70 32" },
-  { icon: Mail, label: "Email", value: "malibs007@gmail.com" },
+  { icon: Mail, label: "Email", value: "contact@teranga-automobile.com" },
   { icon: MapPin, label: "Adresse", value: "Cambéréne, Dakar, Sénégal" },
   { icon: Clock, label: "Horaires", value: "Lun–Dim · 8h – 24h" },
 ]
@@ -27,7 +27,7 @@ export function ContactSection() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const whatsappLink = `https://wa.me/221772457032?text=${encodeURIComponent(
+  const whatsappLink = `https://wa.me/221787164232?text=${encodeURIComponent(
     `Bonjour Teranga Automobile, je souhaite ${form.subject}.\nNom: ${form.name || ""}\nTéléphone: ${form.phone || ""}\nMessage: ${form.message || ""}`,
   )}`
 
@@ -115,7 +115,7 @@ export function ContactSection() {
               WhatsApp
             </a>
             <a
-              href="mailto:malibs007@gmail.com"
+              href="mailto:contact@teranga-automobile.com"
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
             >
               <Mail className="h-4 w-4" />
