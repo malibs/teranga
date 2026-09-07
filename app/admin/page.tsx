@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react"
 
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || ""
-
 type ContactRequest = {
   name: string
   phone: string
@@ -16,13 +14,16 @@ type ContactRequest = {
 export default function AdminPage() {
   const [requests, setRequests] = useState<ContactRequest[]>([])
   const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
+  const [secret, setSecret] = useState("")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    const url = ADMIN_SECRET ? `/api/contact?token=${encodeURIComponent(ADMIN_SECRET)}` : "/api/contact"
+  const loadRequests = async (adminSecret: string) => {
+    setIsLoading(true)
+    setError("")
 
-    fetch(url, {
-      headers: ADMIN_SECRET ? { "x-admin-secret": ADMIN_SECRET } : undefined,
+    fetch("/api/contact", {
+      headers: { "x-admin-secret": adminSecret },
     })
       .then(async (response) => {
         const payload = (await response.json()) as { success?: boolean; requests?: ContactRequest[]; message?: string }
@@ -32,12 +33,28 @@ export default function AdminPage() {
         }
 
         setRequests(payload.requests || [])
+        setIsAuthenticated(true)
       })
       .catch((loadError) => {
         setError(loadError instanceof Error ? loadError.message : "Impossible de charger les demandes.")
       })
       .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => {
+    const savedSecret = window.sessionStorage.getItem("teranga-admin-secret")
+
+    if (savedSecret) {
+      setSecret(savedSecret)
+      loadRequests(savedSecret)
+    }
   }, [])
+
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    window.sessionStorage.setItem("teranga-admin-secret", secret)
+    loadRequests(secret)
+  }
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -48,21 +65,44 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {!isAuthenticated && !isLoading ? (
+        <form onSubmit={handleLogin} className="max-w-md rounded-xl border border-border bg-card p-6">
+          <label htmlFor="admin-secret" className="text-sm font-medium">
+            Secret administrateur
+          </label>
+          <input
+            id="admin-secret"
+            type="password"
+            value={secret}
+            onChange={(event) => setSecret(event.target.value)}
+            placeholder="Votre secret Vercel"
+            className="mt-2 h-11 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            required
+          />
+          <button
+            type="submit"
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+          >
+            Accéder aux demandes
+          </button>
+        </form>
+      ) : null}
+
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           {error}
         </div>
       ) : null}
 
-      {isLoading ? (
+      {isAuthenticated && isLoading ? (
         <div className="rounded-lg border border-border bg-card p-8 text-sm text-muted-foreground">
           Chargement des demandes...
         </div>
-      ) : requests.length === 0 ? (
+      ) : isAuthenticated && requests.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-sm text-muted-foreground">
           Aucune demande enregistrée pour le moment.
         </div>
-      ) : (
+      ) : isAuthenticated ? (
         <div className="space-y-4">
           {requests.map((request, index) => (
             <article key={`${request.phone}-${request.createdAt}-${index}`} className="rounded-xl border border-border bg-card p-5">
@@ -87,7 +127,7 @@ export default function AdminPage() {
             </article>
           ))}
         </div>
-      )}
+      ) : null}
     </main>
   )
 }
