@@ -43,7 +43,7 @@ export function SiteFooter() {
             <div>
               <p className="font-display text-sm font-700">Contact</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <li>+221 77 245 70 32</li>
+                <li>+221 78 716 42 32</li>
                 <li>contact@teranga-automobile.com</li>
                 <li>Camberene, Dakar - Sénégal</li>
               </ul>

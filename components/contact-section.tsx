@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 
 const infos = [
-  { icon: Phone, label: "Téléphone", value: "+221 77 245 70 32" },
+  { icon: Phone, label: "Téléphone", value: "+221 78 716 42 32" },
   { icon: Mail, label: "Email", value: "contact@teranga-automobile.com" },
   { icon: MapPin, label: "Adresse", value: "Cambéréne, Dakar, Sénégal" },
   { icon: Clock, label: "Horaires", value: "Lun–Dim · 8h – 24h" },
