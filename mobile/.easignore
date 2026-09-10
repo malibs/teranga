@@ -1,0 +1,6 @@
+teranga-automobile/
+node_modules/
+dist/
+dist-android/
+dist-ios/
+.expo/

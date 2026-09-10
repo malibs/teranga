@@ -43,6 +43,9 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
+          <a href="/espace-client" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+            Espace client
+          </a>
           <Button render={<a href="#contact" />} nativeButton={false}>
             <Phone className="h-4 w-4" />
             Nous appeler
@@ -72,6 +75,13 @@ export function SiteHeader() {
                 {link.label}
               </a>
             ))}
+            <a
+              href="/espace-client"
+              onClick={() => setOpen(false)}
+              className="mt-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-foreground"
+            >
+              Espace client
+            </a>
             <Button
               render={<a href="#contact" onClick={() => setOpen(false)} />}
               nativeButton={false}

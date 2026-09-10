@@ -2,6 +2,7 @@
   "expo": {
     "name": "Teranga Automobile",
     "slug": "teranga-automobile",
+    "owner": "malibss-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.malibs.terangaautomobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +22,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "652e66ce-112f-4ad5-8bb6-ce5d5e8655d1"
+      }
     }
   }
 }
