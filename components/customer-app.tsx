@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { CalendarDays, CarFront, CheckCircle2, Clock3, LogOut, Mail, MapPin, Phone, ShieldCheck, UserRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { vehicles } from "@/lib/vehicles"
+import { fetchVehicleCatalog, type Vehicle } from "@/lib/vehicles"
 
 type User = {
   id: string
@@ -43,10 +43,23 @@ export function CustomerApp() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState(initialForm)
   const [error, setError] = useState("")
-  const [booking, setBooking] = useState({ vehicleId: vehicles[0]?.id ?? "", vehicleName: vehicles[0]?.name ?? "", startDate: "", endDate: "", notes: "" })
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [booking, setBooking] = useState({ vehicleId: "", vehicleName: "", startDate: "", endDate: "", notes: "" })
   const [bookingStatus, setBookingStatus] = useState("")
 
   useEffect(() => {
+    const loadVehicles = async () => {
+      const catalog = await fetchVehicleCatalog()
+      setVehicles(catalog)
+      if (!catalog[0]) return
+      setBooking((current) => ({
+        ...current,
+        vehicleId: current.vehicleId || catalog[0].id,
+        vehicleName: current.vehicleName || catalog[0].name,
+      }))
+    }
+
+    loadVehicles()
     fetchUser()
   }, [])
 

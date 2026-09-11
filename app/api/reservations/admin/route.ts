@@ -1,4 +1,4 @@
-import { readReservations, writeReservations } from "@/lib/store"
+import { readArchivedReservations, readReservations, writeArchivedReservations, writeReservations } from "@/lib/store"
 
 type ReservationStatus = "en_attente" | "confirmee" | "terminee"
 
@@ -114,15 +114,18 @@ export async function GET(request: Request) {
   const reservations = (await readReservations()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )
+  const archivedReservations = (await readArchivedReservations()).sort(
+    (a, b) => new Date(b.archivedAt).getTime() - new Date(a.archivedAt).getTime(),
+  )
 
   const summary = {
     total: reservations.length,
     en_attente: reservations.filter((item) => item.status === "en_attente").length,
     confirmee: reservations.filter((item) => item.status === "confirmee").length,
-    terminee: reservations.filter((item) => item.status === "terminee").length,
+    terminee: archivedReservations.length,
   }
 
-  return Response.json({ success: true, reservations, summary }, { status: 200 })
+  return Response.json({ success: true, reservations, archivedReservations, summary }, { status: 200 })
 }
 
 export async function PATCH(request: Request) {
@@ -146,10 +149,33 @@ export async function PATCH(request: Request) {
       return Response.json({ success: false, message: "Réservation introuvable." }, { status: 404 })
     }
 
-    reservations[index] = { ...reservations[index], status }
-    await writeReservations(reservations)
+    const updated = { ...reservations[index], status }
 
-    const updated = reservations[index]
+    if (status === "terminee") {
+      const archivedReservations = await readArchivedReservations()
+      const existingArchiveIndex = archivedReservations.findIndex((entry) => entry.id === id)
+      const archivedEntry = {
+        ...updated,
+        archivedAt: new Date().toISOString(),
+      }
+
+      if (existingArchiveIndex >= 0) {
+        archivedReservations[existingArchiveIndex] = archivedEntry
+      } else {
+        archivedReservations.unshift(archivedEntry)
+      }
+
+      reservations.splice(index, 1)
+      await writeReservations(reservations)
+      await writeArchivedReservations(archivedReservations)
+    } else {
+      reservations[index] = updated
+      await writeReservations(reservations)
+
+      const archivedReservations = await readArchivedReservations()
+      const filteredArchived = archivedReservations.filter((entry) => entry.id !== id)
+      await writeArchivedReservations(filteredArchived)
+    }
 
     await Promise.allSettled([
       sendStatusWhatsAppNotification({
@@ -166,7 +192,7 @@ export async function PATCH(request: Request) {
       }),
     ])
 
-    return Response.json({ success: true, reservation: updated }, { status: 200 })
+    return Response.json({ success: true, reservation: updated, archived: status === "terminee" }, { status: 200 })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Une erreur est survenue."
     return Response.json({ success: false, message }, { status: 500 })

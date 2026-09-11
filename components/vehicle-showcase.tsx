@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { vehicles } from "@/lib/vehicles"
+import { useEffect, useState } from "react"
+import { fetchVehicleCatalog, type Vehicle } from "@/lib/vehicles"
 import { VehicleCard } from "@/components/vehicle-card"
 
 const filters = [
@@ -12,8 +12,23 @@ const filters = [
 
 export function VehicleShowcase() {
   const [active, setActive] = useState<(typeof filters)[number]["value"]>("tous")
+  const [fleet, setFleet] = useState<Vehicle[]>([])
 
-  const filtered = vehicles.filter((v) =>
+  useEffect(() => {
+    let active = true
+
+    fetchVehicleCatalog().then((items) => {
+      if (active) {
+        setFleet(items)
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const filtered = fleet.filter((v) =>
     active === "tous" ? true : v.offer === active,
   )
 

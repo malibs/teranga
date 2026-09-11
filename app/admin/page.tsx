@@ -86,7 +86,19 @@ export default function AdminPage() {
             Accéder aux demandes
           </button>
         </form>
-      ) : null}
+      ) : (
+        <div className="mb-6 flex flex-wrap gap-3">
+          <a href="/admin" className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground">
+            Demandes
+          </a>
+          <a href="/admin/reservations" className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-medium">
+            Réservations
+          </a>
+          <a href="/admin/vehicles" className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-medium">
+            Parc automobile
+          </a>
+        </div>
+      )}
 
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">

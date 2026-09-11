@@ -14,7 +14,7 @@ export type Vehicle = {
   featured?: boolean
 }
 
-export const vehicles: Vehicle[] = [
+export const defaultVehicles: Vehicle[] = [
   {
     id: "toyota-land-cruiser",
     name: "Toyota Land Cruiser",
@@ -103,3 +103,23 @@ export const vehicles: Vehicle[] = [
     priceUnit: "FCFA / jour",
   },
 ]
+
+export const vehicles: Vehicle[] = defaultVehicles
+
+export async function fetchVehicleCatalog(): Promise<Vehicle[]> {
+  try {
+    const response = await fetch("/api/vehicles", { cache: "no-store" })
+    if (!response.ok) {
+      return vehicles
+    }
+
+    const payload = await response.json()
+    if (payload?.success && Array.isArray(payload.vehicles)) {
+      return payload.vehicles
+    }
+  } catch {
+    // Fallback to the static catalog if the API is unavailable.
+  }
+
+  return vehicles
+}

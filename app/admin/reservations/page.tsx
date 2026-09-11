@@ -15,6 +15,7 @@ type Reservation = {
   notes: string
   status: ReservationStatus
   createdAt: string
+  archivedAt?: string
 }
 
 type Summary = {
@@ -34,7 +35,9 @@ export default function AdminReservationsPage() {
   const [secret, setSecret] = useState("")
   const [isLoaded, setIsLoaded] = useState(false)
   const [filter, setFilter] = useState<ReservationStatus | "tous">("tous")
+  const [view, setView] = useState<"actives" | "historique">("actives")
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [archivedReservations, setArchivedReservations] = useState<Reservation[]>([])
   const [summary, setSummary] = useState<Summary>({ total: 0, en_attente: 0, confirmee: 0, terminee: 0 })
   const [error, setError] = useState("")
 
@@ -61,6 +64,7 @@ export default function AdminReservationsPage() {
     }
 
     setReservations(payload.reservations || [])
+    setArchivedReservations(payload.archivedReservations || [])
     setSummary(payload.summary || { total: 0, en_attente: 0, confirmee: 0, terminee: 0 })
   }
 
@@ -94,13 +98,15 @@ export default function AdminReservationsPage() {
     loadReservations(secret)
   }
 
+  const activeReservations = view === "historique" ? archivedReservations : reservations
+
   const filteredReservations = useMemo(() => {
     if (filter === "tous") {
-      return reservations
+      return activeReservations
     }
 
-    return reservations.filter((reservation) => reservation.status === filter)
-  }, [filter, reservations])
+    return activeReservations.filter((reservation) => reservation.status === filter)
+  }, [filter, activeReservations])
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10">
@@ -134,7 +140,7 @@ export default function AdminReservationsPage() {
         <>
           <div className="mb-8 grid gap-4 md:grid-cols-4">
             <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-sm text-muted-foreground">Actives</p>
               <p className="mt-3 text-3xl font-bold">{summary.total}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-5">
@@ -149,6 +155,21 @@ export default function AdminReservationsPage() {
               <p className="text-sm text-muted-foreground">Terminées</p>
               <p className="mt-3 text-3xl font-bold text-slate-600">{summary.terminee}</p>
             </div>
+          </div>
+
+          <div className="mb-6 flex flex-wrap gap-2">
+            {(["actives", "historique"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setView(tab)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  view === tab ? "bg-primary text-primary-foreground" : "border border-border bg-card text-muted-foreground"
+                }`}
+              >
+                {tab === "actives" ? "Réservations actives" : "Historique"}
+              </button>
+            ))}
           </div>
 
           <div className="mb-6 flex flex-wrap gap-2">
@@ -200,16 +221,24 @@ export default function AdminReservationsPage() {
                     </div>
 
                     <div className="w-full max-w-xs">
-                      <label className="mb-2 block text-sm font-medium">Changer le statut</label>
-                      <select
-                        value={reservation.status}
-                        onChange={(event) => handleStatusUpdate(reservation.id, event.target.value as ReservationStatus)}
-                        className="h-11 w-full rounded-md border border-input bg-background px-3"
-                      >
-                        <option value="en_attente">En attente</option>
-                        <option value="confirmee">Confirmée</option>
-                        <option value="terminee">Terminée</option>
-                      </select>
+                      {view === "historique" ? (
+                        <div className="rounded-lg bg-background p-3 text-sm text-muted-foreground">
+                          <strong className="text-foreground">Archivée le :</strong> {reservation.archivedAt ? new Date(reservation.archivedAt).toLocaleString("fr-FR") : "—"}
+                        </div>
+                      ) : (
+                        <>
+                          <label className="mb-2 block text-sm font-medium">Changer le statut</label>
+                          <select
+                            value={reservation.status}
+                            onChange={(event) => handleStatusUpdate(reservation.id, event.target.value as ReservationStatus)}
+                            className="h-11 w-full rounded-md border border-input bg-background px-3"
+                          >
+                            <option value="en_attente">En attente</option>
+                            <option value="confirmee">Confirmée</option>
+                            <option value="terminee">Terminée</option>
+                          </select>
+                        </>
+                      )}
                     </div>
                   </div>
                 </article>
