@@ -42,6 +42,50 @@ export default function AdminVehiclesPage() {
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+
+  const handleImageSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setError("Le fichier sélectionné n’est pas une image valide.")
+      return
+    }
+
+    setError("")
+    setIsUploadingImage(true)
+
+    try {
+      const uploadResponse = await fetch("/api/vehicles/upload", {
+        method: "POST",
+        headers: {
+          "x-admin-secret": secret,
+        },
+        body: (() => {
+          const formData = new FormData()
+          formData.append("file", file)
+          return formData
+        })(),
+      })
+
+      const payload = await uploadResponse.json()
+
+      if (!uploadResponse.ok || !payload.success) {
+        throw new Error(payload.message || "L’upload de l’image a échoué.")
+      }
+
+      setForm((current) => ({ ...current, image: payload.image || payload.url || current.image }))
+    } catch (imageError) {
+      setError(imageError instanceof Error ? imageError.message : "Erreur de lecture de l’image.")
+    } finally {
+      setIsUploadingImage(false)
+      event.target.value = ""
+    }
+  }
 
   const loadVehicles = async (adminSecret: string) => {
     setError("")
@@ -258,7 +302,17 @@ export default function AdminVehiclesPage() {
 
             <label className="space-y-2 text-sm md:col-span-2">
               <span>Image</span>
-              <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="h-11 w-full rounded-md border border-input bg-background px-3" placeholder="/cars/mon-vehicule.png" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelection}
+                className="block h-11 w-full cursor-pointer rounded-md border border-input bg-background px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground"
+              />
+              {isUploadingImage ? (
+                <span className="text-xs text-muted-foreground">Téléversement vers Vercel Blob…</span>
+              ) : form.image ? (
+                <span className="text-xs text-muted-foreground">Image prête à être enregistrée.</span>
+              ) : null}
             </label>
 
             <label className="flex items-center gap-2 text-sm md:col-span-2">
