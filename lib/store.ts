@@ -71,11 +71,19 @@ async function readJsonStore<T>(blobName: string, filePath: string, fallback: T)
       }
     } catch (error) {
       console.warn(`Blob read skipped for ${blobName}:`, error)
+
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(`Impossible de lire le stockage Vercel Blob pour ${blobName}. Vérifiez BLOB_READ_WRITE_TOKEN et le store Blob.`)
+      }
     }
   }
 
-  if (process.env.NODE_ENV === "production" && !process.env.BLOB_READ_WRITE_TOKEN) {
-    console.warn(`BLOB_READ_WRITE_TOKEN missing for ${blobName}; using fallback values.`)
+  if (process.env.NODE_ENV === "production") {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      throw new Error("Le stockage Vercel Blob n'est pas configuré. Ajoutez BLOB_READ_WRITE_TOKEN dans Vercel.")
+    }
+
+    // A serverless deployment cannot write to its /var/task filesystem.
     return safeFallback()
   }
 
